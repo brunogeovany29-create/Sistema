@@ -60,7 +60,7 @@ void Cliente(){
   
   do {
   
-    
+  limpartela();  
   std::cout << "(1) Verifica dados da conta" << std::endl;
   std::cout << "(2) Verifica saldo da conta" << std::endl;
   std::cout << "(3) Sacar" << std::endl;
@@ -73,16 +73,16 @@ void Cliente(){
   int Iopcao = std::stoi(opcao);
   switch(Iopcao){
     
-    case CONSULTAR:{
+    case CONSULTAR:{ /*OK*/
     limpartela();
-    cliente.consultarConta(cpf);
+    cliente.buscar(cpf);
     std::cin.ignore();
     limpartela();
     menu1 = 1;
     break;
     }
     
-    case SALDO:{
+    case SALDO:{ /*OK*/
     limpartela();
     cliente.verSaldo(cpf);
     std::cin.ignore();
@@ -91,7 +91,7 @@ void Cliente(){
     break;
     }
 
-    case SACAR:{
+    case SACAR:{ /*OK*/
     limpartela();
     double saque;
     cliente.verSaldo(cpf);
@@ -109,7 +109,7 @@ void Cliente(){
     break;
     }
 
-    case DEPOSITAR:{
+    case DEPOSITAR:{ /*OK*/
     limpartela();
     double depositar;
     cliente.verSaldo(cpf);
@@ -159,17 +159,17 @@ void Gerente(){
   Banco gerente;
   int menu1;
   std::string opcao;
-  std::string cpf;
-
+  
   limpartela();
   tela();
-
+  
+  std::string cpf;
   std::cout << "Digite o seu cpf: ";
-  std::getline(std::cin, cpf);
+  std::getline(std::cin,cpf);
   login(cpf);
   
  do {
-  
+  limpartela();
   std::cout << "(1) Buscar conta" << std::endl;
   std::cout << "(2) Cadastrar conta" << std::endl;
   std::cout << "(3) Ativar Conta" << std::endl;
@@ -182,38 +182,39 @@ void Gerente(){
   int Iopcao = std::stoi(opcao);
   switch(Iopcao){
     
-    case BUSCAR:{
+    case BUSCAR:{ /*OK*/
     limpartela();
-    std::string cpfCliente;
+    /*std::string cpfCliente;
     std::cout << "Buscar cliente digite o cpf: " << std::endl;
     std::getline(std::cin,cpfCliente);
-    gerente.consultarConta(cpfCliente);
-    std::cin.get();
+    gerente.consultarConta(cpfCliente);*/
+    std::string num;
+    std::cout << "Digite o cpf para busca a conta: ";
+    std::getline(std::cin, num);
+    gerente.buscar(num);
     menu1 = 1;
     break;
     }
-    case CADASTRAR:{
+    case CADASTRAR:{ /*OK*/
     gerente.Cadastrar();
     menu1 = 1;
     break;
     }
-    case ATIVAR:{
+    case ATIVAR:{ /*OK*/
     limpartela();
     std::string cpf;
     std::cout << "Ativar conta, digite o CPF: " << std::endl;
-    std::cin >> cpf;
-    gerente.ativarConta(cpf);
+    std::getline(std::cin, cpf);
+    gerente.Ativaconta(cpf);
     menu1 = 1;
     break;  
     }
-    case ALTERAR:{
+    case ALTERAR:{ /*OK*/
       std::string cpf;
       limpartela();
       std::cout << "Digite o cpf da conta: " << std::endl;
       std::getline(std::cin, cpf);
-      gerente.altTipoconta(cpf);
-      std::cin.ignore();
-      std::cin.get();
+      gerente.TipoConta(cpf);
       menu1 = 1;
       break;
     }
@@ -231,7 +232,7 @@ void Gerente(){
     }
   }
   }
-  catch (const std::exception& erroGE){
+  catch (const std::exception& erroCliente){
     limpartela();
     tela();
     std::cerr << "ERRO valor inserido nao e um numero, digite apenas numeros" << std::endl;
@@ -287,7 +288,7 @@ void menuEntrada(){
   }
   }
   }
-  catch (const std::exception& erro) {
+  catch (const std::exception& erroCliente) {
     limpartela();
     tela();
     std::cerr << "ERRO valor inserido nao e um numero, digite apenas numeros" << std::endl;

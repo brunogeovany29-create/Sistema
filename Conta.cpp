@@ -3,40 +3,191 @@
 #include <fstream>
 #include <stdlib.h>
 #include <vector>
+#include <iomanip>
+#include <limits>
+#include <algorithm> /*Importante para usar o find_if*/
+#include <cstdio> /*Importante para usar remove e rename*/
 #include "Conta.hpp"
 #include "Menu.hpp"
 
 Banco::Banco(const std::string& nome,
          const std::string& cpf,
+         int senha,
          const int nconta,
          int tpconta,
          int ativaconta,
          double saldoconta){
 }
+
+  /*Set */
+void Banco::setnome(const std::string& nome){
+  this->nome = nome;
+}
+void Banco::setcpf(const std::string& cpf){
+  this->cpf = cpf;
+}
+void Banco::setnconta(int nconta){
+  this->nconta = nconta;
+}
+void Banco::settpconta(int tpconta){
+  this->tpconta = tpconta;
+}
+void Banco::setativaconta (int ativaconta){
+  this->ativaconta = ativaconta;
+}
+void Banco::setsaldoconta(double saldoconta){
+  this->saldoconta = saldoconta;
+}
+void Banco::setsenha(const int senhaConta){
+  this-> senha = senhaConta;
+}
+
+/*Get*/
+
+std::string Banco::getnome() const{
+  return nome;
+}
+std::string Banco::getcpf () const{
+  return cpf;
+}
+int Banco::getnconta() const{
+  return nconta;
+}
+int Banco::gettpconta() const{
+  return tpconta;
+}
+int Banco::getatiaconta() const{
+  return ativaconta;
+}
+double Banco::getsaldoconta () const{
+  return saldoconta;
+}
+int Banco::getsenha () const {
+  return senha;
+}
+
+
+/*-------------------------------------------------------*/
+
+std::vector<Banco> carregarDados();
+bool senha(const Banco& conta);
+
+// Lê o arquivo uma única vez e devolve todas as contas
+std::vector<Banco> carregarDados() {
+    std::vector<Banco> dados;
+    std::ifstream arquivo("Banco.txt", std::ios::in);
+
+    if (!arquivo.is_open()) {
+        std::cout << "Erro ao abrir Banco.txt" << std::endl;
+        return dados; // vetor vazio
+    }
+
+    std::string nome, cpf;
+    int nconta, tpconta, ativaconta, senhaconta;
+    double saldoconta;
+
+    while (arquivo >> cpf >> nome >> nconta >> tpconta >> ativaconta >> saldoconta >> senhaconta) {
+        Banco d;
+        d.setcpf(cpf);
+        d.setnome(nome);
+        d.setnconta(nconta);
+        d.settpconta(tpconta);
+        d.setativaconta(ativaconta);
+        d.setsaldoconta(saldoconta);
+        d.setsenha(senhaconta);
+        dados.push_back(d);
+    }
+
+    return dados; // o ifstream fecha sozinho ao sair do escopo
+}
+
+
+bool senha(const Banco& conta) {
+    const int MAX_TENTATIVAS = 3;
+
+    for (int tentativa = 1; tentativa <= MAX_TENTATIVAS; tentativa++) {
+        limpartela();
+        
+        std::cout << "Tentativa " << tentativa << " de " << MAX_TENTATIVAS << std::endl;
+        std::cout << "Digite a sua senha: ";
+        int verificaSenha;
+        if (!(std::cin >> verificaSenha)) {
+            std::cin.ignore();
+            // entrada inválida (letras, por exemplo): limpa o erro e conta como tentativa
+            std::cin.clear();
+            std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            std::cout << "Entrada invalida." << std::endl;
+            continue;
+        }
+
+        if (verificaSenha == conta.getsenha()) {
+            std::cout << "Seja bem vindo, " << conta.getnome() << "!" << std::endl;
+            return true;
+        }
+
+        std::cout << "Senha incorreta." << std::endl;
+    }
+
+    std::cout << "Numero de tentativas esgotado." << std::endl;
+    return false;
+}
+
+void login(const std::string& Logar) {
+    std::vector<Banco> dados = carregarDados();
+
+    auto it = std::find_if(dados.begin(), dados.end(),
+        [&Logar](const Banco& b) { return b.getcpf() == Logar; });
+
+    if (it == dados.end()) {
+        std::cout << "Conta nao encontrada" << std::endl;
+        std::cin.get();
+        menuEntrada();
+        return;
+    }
+
+    if (senha(*it)) {
+        std::cout << "Login bem sucedido";
+    } else {
+        menuEntrada();
+    }
+}
+
+/*--------------------------------------------------------*/
+
+
 /* Esta função é responsável por captura os dados inseridos pelo Usuário
    realizando o cadastro no banco, que nesta versão permanece apenas na 
    memória enquanto o programa estiver rodando*/
 int Banco::Cadastrar(){
    
   std::string nome, cpf;
-  int numconta, tipoconta;
+  int numconta, tipoconta,senha;
   double saldo;
   
   std::cout << "Nome " << std::endl;
   std::getline(std::cin, nome);
+  setnome(nome);
   std::cout << "Cpf " << std::endl;
   std::getline(std::cin, cpf);
-  std::cout << "Numero Conta " << std::endl;
+  setcpf(cpf);
+  std::cout << "Numero da conta: " << std::endl;
   std::cin >> numconta;
+  setnconta(numconta);
   if (numconta > 0){
     std::cout << "Tipo da conta " << std::endl;
     std::cin >> tipoconta;
+    settpconta(tipoconta);
     if (tipoconta > 0 && tipoconta < 3){
       std::cout << "Saldo em conta " << std::endl;
       std::cin >> saldo;
+      setsaldoconta(saldo);
       if (saldo > 0){ 
         ativaconta = 1;
-        registrarConta(nome,cpf,numconta,tipoconta,ativaconta,saldo);
+        setativaconta(ativaconta);
+      std::cout << "Crie a sua senha (somente numeros): ";    
+      std::cin >> senha;
+      setsenha(senha);
+        registrarConta();
       }
       else{
       std::cout << "Valor invalido";
@@ -55,380 +206,372 @@ int Banco::Cadastrar(){
 
   return 0;
 }
-/*Esta função criar o arquivo txt onde ficaram quardados os dados da conta, de a um dos usuários*/
-void Banco::registrarConta (std::string nomeA, std::string cpfA, int numcontaA, int tipocontaA, int ativacontaA, double saldoA){
+
+/*--------------Gerente--------------------*/
+
+/* Esta função é responsável por registrar os dados coletados pela cadastrar*/
+void Banco::registrarConta(){
    
-  std::ofstream escreverArquivo (cpfA+".txt",std::ios::out | std::ios::trunc);
-  escreverArquivo << nomeA << std::endl; 
-  escreverArquivo << cpfA << std::endl;
-  escreverArquivo << numcontaA << std::endl;
-  escreverArquivo << tipocontaA << std::endl;
-  escreverArquivo << ativacontaA << std::endl;
-  escreverArquivo << saldoA << std::endl;
+  std::ofstream escreverArquivo ("Banco.txt",std::ios::app);
+  
+  escreverArquivo << getcpf() << " " << getnome() << " " << getnconta() << " " << gettpconta() << " "  << getatiaconta() << " " << getsaldoconta() << " " << getsenha() << "\t" << std::endl; 
      
   escreverArquivo.close();
   return;
 }
+
 /*Está função é responsável por busca a conta, utilizando com base o cpf,
   poderia ser o numero da conta, ou qualquer outra condição, desde que
   especificada no arquivo Conta.hpp*/
+void Banco::buscar (std::string numCpf){
 
-void login(std::string Logar){
-  std::ifstream lerArquivo (Logar+".txt",std::ios::in);
+std::vector <Banco> dados;
+std::string Tempcpf;
+std::ifstream arquivo ("Banco.txt", std::ios::in);
+
+if (!arquivo.is_open()){
+  std::cout << "Deu erro";
+  
+}
+
+std::string nome,cpf;
+int nconta, tpconta, ativaconta, senhaconta;
+double saldoconta;
+
+/*Banco(): nome(""), cpf(""), nconta(0), tpconta(0), ativaconta(0), saldoconta(0.0*/
+while(arquivo >> cpf >> nome >> nconta >> tpconta >> ativaconta >> saldoconta >> senhaconta){
+  
+  Banco d;    
+  d.setcpf(cpf);
+  d.setnome(nome);
+  d.setnconta(nconta);
+  d.settpconta(tpconta);
+  d.setativaconta(ativaconta);
+  d.setsaldoconta(saldoconta);
+  d.setsenha(senhaconta);
+  dados.push_back(d);
+}
+
+arquivo.close();
+
+std::string indice = numCpf;
+
+auto it = std::find_if (dados.begin(), dados.end(),[indice](const Banco& b){return b.getcpf() == indice;});
+if (it != dados.end()){
+ 
+  std::cout << "Dados da conta" << std::endl;
+  std::cout << "CPF: " << it->getcpf() << std::endl;
+  std::cout << "Nome do cliente: " << it->getnome() << std::endl;
+  std::cout << "Numero da conta: " << it->getnconta() << std::endl;
+  std::cout << "Tipo de conta: " << it->gettpconta() << std::endl;
+  std::cout << "Ativa/Desativa conta: " << it->getatiaconta() << std::endl;
+  std::cout << "Saldo em conta: " << std::fixed << std::setprecision(2) << it->getsaldoconta() << std::endl;
+  std::cin.get();
+}
+
+}
+
+int Banco::Ativaconta(std::string numCpf){
+  std::vector <Banco> dados;
+
+  /*Função ler o arquivo permanente Banco.txt*/
+  std::ifstream Arqpermanente ("Banco.txt",std::ios::in);
+  
+  /*Funcão cira um arquivo temporário TEMPBanco.txt*/
+  std::ofstream Arqtemporario ("TEMPBanco.txt", std::ios::out);
+
   limpartela();
+  
+  if (!Arqpermanente.is_open() || !Arqtemporario.is_open()){
+    std::cerr << "Acesso Negado" << std::endl;
+    std::exit(EXIT_FAILURE);
+  }
 
-  std::vector <std::string> status;
-  std::string str;
+  /*Após verifica a condicional de acesso, criasse as variáveis que serão utilizadas no laço*/
+  std::string cpf, nome;
+  int nconta, tpconta, atconta, senhaconta;
+  double saldo;
+  bool encontrado = false;
 
-       if (!lerArquivo.is_open()){
-      }    
-  /* Esse estrutura de repetição FOR 
-   eu coloquei para ler apenas primeira linha do documento
-   e retornar a informação*/
-        while(std::getline(lerArquivo,str)){
-          status.push_back(str);
-      }
+  while (Arqpermanente >> cpf >> nome >> nconta >> tpconta >> atconta >> saldo >> senhaconta){
+    Banco d;
+
+    d.setcpf(cpf);
+    d.setnome(nome);
+    d.setnconta(nconta);
+    d.settpconta(tpconta);
+    d.setativaconta(atconta);
+    d.setsaldoconta(saldo);
+    d.setsenha(senhaconta);
+
+    dados.push_back(d);
+
+    if(numCpf == cpf){
+      encontrado = true;
+      int Ativa;
+
+      std::cout << "Ativa Conta (1) Desativar Conta (2)";
+      std::cin >> Ativa;
       
-        Existe(Logar);
+      if (Ativa > 0 && Ativa <= 2){
+        d.setativaconta(Ativa);
+      }
+    }
 
-        senha(Logar);
-        
-        int iStatus = std::stoi(status.at(4));
-       
-        if (iStatus == 2){
-        std::cerr<< "Seu acesso encontra-se Limitado" << std::endl;
-        std::cerr << "Procure o seu gerente" << std::endl;
-        std::cin.ignore();
-        menuEntrada();
-        }
-        else {
-          limpartela();
-          std::cout << "Seja bem vindo" << std::endl;
-        }      
-  lerArquivo.close();
-
-}
-
-int senha(std::string senha){
-  int repetir = 0;
-  int tentativas;
-  std::string verificaSenha;
+    Arqtemporario << std::fixed << std::setprecision(2);
+    Arqtemporario << d.getcpf() << " " << d.getnome() << " " << d.getnconta() << " " << d.gettpconta() << " "  << d.getatiaconta() << " " << d.getsaldoconta() << " " << d.getsenha() << "\n";
+  }
   
-  limpartela();
+  Arqpermanente.close();
+  Arqtemporario.close();
 
-    do {
-        limpartela();
-        tentativas = 3 - repetir;
-        std::cout << "Voce ainda tem mais " << tentativas << " tentativas." << std::endl;
-        std::cout << "Digite a sua senha: " << std::endl;
-        std::getline(std::cin,verificaSenha);
-        
-        if (verificaSenha != senha){
-          std::cerr<< "Sua senha esta errada" << std::endl;
-        repetir++;
-        
-        }
-
-        else {
-         int Isenha = std::stoi(verificaSenha); 
-         return Isenha;
-        }
-
-      } while (repetir < 3);
-      limpartela();
-      std::cout << "Acabou o numero de tentativas" << std::endl;
-      std::cin.ignore();
-      menuEntrada(); 
-      return 0;
-}
-
-
-void Existe(std::string existe){
-  std::ifstream lerArquivo (existe+".txt",std::ios::in);
-  limpartela();
-
-  std::vector <std::string> status;
-  std::string str;
-
-        if (!lerArquivo.is_open()){
-        std::cout << "Nao existe nenhuma conta registrada com esse CPF" << std::endl;
-        std::cin.ignore();
-        menuEntrada();
-        }                
-  
-  lerArquivo.close();
-
-}
-
-
-
-/*Única função verifica o saldo em conta
-Atualização futura distiguir conta poupanca e corrente.*/
-void Banco::verSaldo(std::string veSaldo){
-  std::vector <std::string> vesaldo;
-  std::ifstream lerArquivo (veSaldo+".txt",std::ios::in);
-  
-  limpartela();
-  
-  if (!lerArquivo.is_open()){
-    std::cerr << "Acesso Negado" << std::endl;
-    std::exit(EXIT_FAILURE);
+  if(encontrado){
+    remove("Banco.txt");
+    rename("TEMPBanco.txt","Banco.txt");
+    limpartela();
   }
   else {
-  std::string str;
-  while(std::getline(lerArquivo,str)){
-    vesaldo.push_back(str);
+    remove("TEMPBanco.txt");
+    std::cout << "Arquivo nao encontrado";
   }
-
-  std::cout << "Saldo Atual: " << vesaldo.at(5) << "R$" << std::endl;
-  /* Esse estrutura de repetição FOR 
-   int linhaSaldo = 6;
-   eu coloquei para ler apenas ultima linha do documento
-   e retornar a informação
-  for (int i = 1; i <= linhaSaldo; i++){
-        if(getline(lerArquivo,str)){
-          if (i == linhaSaldo){
-          cout << "Saldo em Conta: " << str << " Reais" << endl;
-          }
-        }
-  } */ 
-
-  lerArquivo.close();
-  }
-  return;
-}
-/*Única função realizar o saque em conta
-Atualização futura distiguir conta poupanca e corrente.*/
-int Banco::Sacar(std::string Retirada, double Saque){
-  std::vector<std::string>sacar;
-
-  std::ifstream lerArquivo (Retirada+".txt",std::ios::in);
-  
-  limpartela();
-  
-  if (!lerArquivo.is_open()){
-    std::cerr << "Acesso Negado" << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-  else {
-  std::string str;
-          /*Vetores são bons*/
-          while(std::getline(lerArquivo,str)){
-          sacar.push_back(str);         
-          }
-  
-  
-  lerArquivo.close();
-  
-  /*Aqui começa a mágica*/
-  int Inumconta = std::stoi(sacar.at(2));
-  int Itipoconta = std::stoi(sacar.at(3));
-  int Iativaconta = std::stoi(sacar.at(4));
-  double novosaldo, Dsaldo = std::stod(sacar.at(5));
-  novosaldo = Dsaldo - Saque;
-  if (novosaldo >= 0){
-  registrarConta(sacar.at(0),sacar.at(1),Inumconta,Itipoconta,Iativaconta,novosaldo);
-  }
-  else {
-    std::cout << "Saldo insuficiente para realizar o saque" << std::endl;
-    std::cout << "Saldo atual: " << sacar.at(5) << "R$" << std::endl;
-  }
-  }  
-  return 0;
-}
-/*Única função realizar deposito em sem conta
-Atualização futura distiguir conta poupanca e corrente.*/
-int Banco::Depositar(std::string Aportar, double Deposito){
-  std::vector<std::string>depositar;
-
-  std::ifstream lerArquivo (Aportar+".txt",std::ios::in);
-  
-  limpartela();
-  
-  if (!lerArquivo.is_open()){
-    std::cerr << "Acesso Negado" << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-  else{
-  std::string str;
-          /*Vetores são bons*/
-          while(std::getline(lerArquivo,str)){
-          depositar.push_back(str);         
-          }
-  
-
-  lerArquivo.close();
-  
-  /*Aqui começa a mágica*/
-  int Inumconta = std::stoi(depositar.at(2));
-  int Itipoconta = std::stoi(depositar.at(3));
-  int Iativaconta = std::stoi(depositar.at(4));
-
-  double novosaldoD, Dsaldo = std::stod(depositar.at(5));
-  novosaldoD = Deposito + Dsaldo;
-  registrarConta(depositar.at(0),depositar.at(1),Inumconta,Itipoconta,Iativaconta,novosaldoD);
-  }
+   
   return 0;
 }
 /*Única função altera o tipo de conta poupanca e corrente.
 Atualização futura imagino que seja classifica 
 cliente de varejo e private bank*/
-int Banco::altTipoconta(std::string Alterar){
-  std::vector<std::string>alttipo;
-  int alt;
 
-  std::ifstream lerArquivo (Alterar+".txt",std::ios::in);
+int Banco::TipoConta(std::string numCpf){
+  std::vector <Banco> dados;
+  std::cin.clear();
+  /*Função ler o arquivo permanente Banco.txt*/
+  std::ifstream Arqpermanente ("Banco.txt",std::ios::in);
   
-  if (!lerArquivo.is_open()){
-    limpartela();
+  /*Funcão cira um arquivo temporário TEMPBanco.txt*/
+
+  std::ofstream Arqtemporario ("TEMPBanco.txt", std::ios::out);
+
+
+  limpartela();
+  
+  if (!Arqpermanente.is_open() || !Arqtemporario.is_open()){
     std::cerr << "Acesso Negado" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
-  else {
-  
-  limpartela();
-  
-  std::cout << "Altere tipo de conta (1)Conta Corrente (2)Poupanca: ";
-  std::cin >> alt;
+  /*Após verifica a condicional de acesso, criasse as variáveis que serão utilizadas no laço*/
+  std::string cpf, nome;
+  int nconta, tpconta, atconta, senhaconta;
+  double saldo;
+  bool encontrado = false;
+ 
 
-  if (alt > 0 && alt <= 2){
-  
-  limpartela();
-  
-  std::string str;
-          /*Vetores são bons*/
-          while(std::getline(lerArquivo,str)){
-          alttipo.push_back(str);         
-          }
-  
-  
-  lerArquivo.close();
-  
-  /*Aqui começa a mágica*/
-  int Inumconta = std::stoi(alttipo.at(2));
-  int Itipoconta = alt;
-  int Iativaconta = std::stoi(alttipo.at(4));
-
-  if (Itipoconta == 1){
-    std::cout << "Status atual Conta Corrente" << std::endl;
-    double Dsaldo = std::stod(alttipo.at(5));
-    registrarConta(alttipo.at(0),alttipo.at(1),Inumconta,Itipoconta,Iativaconta,Dsaldo);
-  }
-  if (Itipoconta == 2) {
-  std::cout << "Status atual Conta Poupanca" << std::endl;
-  double Dsaldo = std::stod(alttipo.at(5));
-  registrarConta(alttipo.at(0),alttipo.at(1),Inumconta,Itipoconta,Iativaconta,Dsaldo);
-  }
-  }
-}
-  return 0;
-}
-/*Única função devolver todas as informações sobre a conta*/
-int Banco::consultarConta(std::string Consultar){
-  std::vector<std::string>ler;
-  limpartela();
-
-  std::ifstream lerArquivo (Consultar+".txt",std::ios::in);
-  
-  std::string str;
-  
-  tela();
-
-   if (!lerArquivo.is_open()){
-    std::cerr << "Satus de conta: DESATIVADA" << std::endl;
-    std::cerr << "Entre em contato com seu gerente." << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-
-  else {
-
-  if (lerArquivo.is_open()){
-    std::cout << "Conta do Cliente " << std::endl;
-    while(std::getline(lerArquivo, str)){
-      ler.push_back(str);
-    }
-    std::cout << "Nome: " << ler.at(0) << std::endl;
-    std::cout << "CPF: " << ler.at(1) << std::endl;
-    std::cout << "Numero da conta: " << ler.at(2) << std::endl;
-    if (ler.at(3) == "1"){
-    std::cout << "Tipo da conta: " << "Conta Corrente" << std::endl;
-     if (ler.at(4) == "1"){
-      std::cout << "Status da conta: Ativa" << std::endl;}
-      else {
-      std::cout << "Status da conta: Desativada" << std::endl;
-    }
+  while (Arqpermanente >> cpf >> nome >> nconta >> tpconta >> atconta >> saldo >> senhaconta){
+     
+    Banco d;
     
-    std::cout << "Saldo em conta: " << ler.at(5) << "R$" << std::endl;
+    d.setcpf(cpf);
+    d.setnome(nome);
+    d.setnconta(nconta);
+    d.settpconta(tpconta);
+    d.setativaconta(atconta);
+    d.setsaldoconta(saldo);
+    d.setsenha(senhaconta);
+
+    dados.push_back(d);
+    
+    if(numCpf == cpf){
+    encontrado = true;
+
+    int Tipo;
+
+    std::cout << "Altere tipo de conta (1)Conta Corrente (2)Poupanca: ";
+    std::cin >> Tipo;
+    
+    if (Tipo >= 1 && Tipo <= 2){
+    
+      d.settpconta(Tipo);
+          
     }
-    else{
-      std::cout << "Tipo da conta: " << " Conta Poupanca" << std::endl;
-      if (ler.at(4) == "1"){
-      std::cout << "Status da conta: Ativa" << std::endl;}
-      else {
-      std::cout << "Status da conta: Desativada" << std::endl;
-      }
-    std::cout << "Saldo em conta: " << ler.at(5) << "R$" << std::endl;
-    }
-
   }
-
-  lerArquivo.close();
+  Arqtemporario << std::fixed << std::setprecision(2);
+  /* Arqtemporario << cpf << " " << nome << " " << nconta << " " << tpconta << " "  << atconta << " " << saldo << "\n"; */
+  Arqtemporario << d.getcpf() << " " << d.getnome() << " " << d.getnconta() << " " << d.gettpconta() << " " << d.getatiaconta() << " " << d.getsaldoconta() << " " << d.getsenha() << "\n";
 }
-  return 0;
-}
-int Banco::ativarConta(std::string Status){
-    std::vector<std::string>status;
-
-  std::ifstream lerArquivo (Status+".txt",std::ios::in);
   
-  std::string str;
-          /*Vetores são bons*/
-          while(std::getline(lerArquivo,str)){
-          status.push_back(str);         
-          }
-  
-  if (!lerArquivo.is_open()){
-    std::cerr << "Acesso Negado" << std::endl;
-    std::exit(EXIT_FAILURE);
-  }
-  lerArquivo.close();
-  
-  if (status.at(4) == "1"){
-      std::cout << "Status da conta: Ativa" << std::endl;}
-      else {
-      std::cout << "Status da conta: Desativada" << std::endl;
-      } 
+  Arqpermanente.close();
+  Arqtemporario.close();
 
-  std::cout << "Digite (1)Ativar conta (2)Desativar conta: ";
-  int Iativaconta;
-  std::cin >> Iativaconta;
-
-  if (Iativaconta > 0 && Iativaconta <= 2){
-  
-  /*Aqui começa a mágica*/
-  int Inumconta = std::stoi(status.at(2));
-  int Itipoconta = std::stoi(status.at(3));
-  double saldo = std::stod(status.at(5));
-
-  registrarConta(status.at(0),status.at(1),Inumconta,Itipoconta,Iativaconta,saldo);
+  if(encontrado){
+    remove("Banco.txt");
+    rename("TEMPBanco.txt","Banco.txt");
+    limpartela();
   }
   else {
+    remove("TEMPBanco.txt");
+    std::cout << "Arquivo nao encontrado";
+  }  
+  
+  return 0;
+}
+
+/*--------------Cliente--------------------*/
+
+/*Única função verifica o saldo em conta
+Atualização futura distiguir conta poupanca e corrente.*/
+void Banco::verSaldo(std::string veSaldo){
+
+std::vector <Banco> dados;
+std::string Tempcpf;
+std::ifstream arquivo ("Banco.txt", std::ios::in);
+
+
+if (!arquivo.is_open()){
+  std::cout << "Deu erro";
+  
+}
+
+std::string nome,cpf;
+int nconta, tpconta, ativaconta, senhaconta;
+double saldoconta;
+
+int Icpf;
+
+/*Banco(): nome(""), cpf(""), nconta(0), tpconta(0), ativaconta(0), saldoconta(0.0*/
+while(arquivo >> cpf >> nome >> nconta >> tpconta >> ativaconta >> saldoconta >> senhaconta){
+  
+  Banco d;    
+  d.setnome(nome);
+  d.setcpf(cpf);
+  d.setnconta(nconta);
+  d.settpconta(tpconta);
+  d.setativaconta(ativaconta);
+  d.setsaldoconta(saldoconta);
+  d.setsenha(senhaconta);
+
+  dados.push_back(d);
+}
+
+arquivo.close();
+
+std::string indice = veSaldo;
+
+auto it = std::find_if (dados.begin(), dados.end(),[indice](const Banco& b){return b.getcpf() == indice;});
+if (it != dados.end()){
+  std::cout << "Dados da conta" << std::endl;
+  std::cout << "Saldo em conta: " << it->getsaldoconta() << std::endl;
+}
+
+}
+
+/*Única função realizar o saque em conta
+Atualização futura distiguir conta poupanca e corrente.*/
+int Banco::Sacar(std::string cpfConta, double Atsaldo){
+
+  /*Função ler o arquivo permanente Banco.txt*/
+  std::ifstream Arqpermanente ("Banco.txt",std::ios::in);
+  
+  /*Funcão cira um arquivo temporário TEMPBanco.txt*/
+
+  std::ofstream Arqtemporario ("TEMPBanco.txt", std::ios::out);
+
+
+  limpartela();
+  
+  if (!Arqpermanente.is_open() || !Arqtemporario.is_open()){
+    std::cerr << "Acesso Negado" << std::endl;
+    std::cin.get();
+    std::exit(EXIT_FAILURE);
+  }
+
+  /*Após verifica a condicional de acesso, criasse as variáveis que serão utilizadas no laço*/
+  std::string cpf, nome;
+  int nconta, tpconta, atconta, senhaconta;
+  double saldo;
+  bool encontrado = false;
+
+  while (Arqpermanente >> cpf >> nome >> nconta >> tpconta >> atconta >> saldo >> senhaconta){
+    if(cpfConta == cpf){
+    if(saldo >= Atsaldo){
+    
+    encontrado = true;
+
+    saldo = saldo - Atsaldo;
+    }
+    else {
+    
+      std::cout << "Saldo insuficiente";
+    
+      std::cin.ignore();
+    }
+  }
+    Arqtemporario << cpf << " " << nome << " " << nconta << " " << tpconta << " "  << atconta << " " << saldo <<  " " << senhaconta << "\n";
+  }
+
+  Arqpermanente.close();
+  Arqtemporario.close();
+
+  if(encontrado){
+    remove("Banco.txt");
+    rename("TEMPBanco.txt","Banco.txt");
+    limpartela();
+    
+  }
+  else {
+    remove("TEMPBanco.txt");
+  }
+  
+  
+  return encontrado ? 1 : 0;
+}
+
+/*Única função realizar deposito em sem conta
+Atualização futura distiguir conta poupanca e corrente.*/
+int Banco::Depositar(std::string cpfConta, double Depsaldo){
+  /*Função ler o arquivo permanente Banco.txt*/
+  std::ifstream Arqpermanente ("Banco.txt",std::ios::in);
+  
+  /*Funcão cira um arquivo temporário TEMPBanco.txt*/
+
+  std::ofstream Arqtemporario ("TEMPBanco.txt", std::ios::out);
+
+
+  limpartela();
+  
+  if (!Arqpermanente.is_open() || !Arqtemporario.is_open()){
     std::cerr << "Acesso Negado" << std::endl;
     std::exit(EXIT_FAILURE);
   }
+
+  /*Após verifica a condicional de acesso, criasse as variáveis que serão utilizadas no laço*/
+  std::string cpf, nome;
+  int nconta, tpconta, atconta, senhaconta;
+  double saldo;
+  bool encontrado = false;
+
+  while (Arqpermanente >> cpf >> nome >> nconta >> tpconta >> atconta >> saldo >> senhaconta){
+    if(cpfConta == cpf){
+    
+    encontrado = true;
+    if (Depsaldo > 0){  
+    saldo = saldo + Depsaldo;
+    }
+  }
+    Arqtemporario << cpf << " " << nome << " " << nconta << " " << tpconta << " "  << atconta << " " << saldo << " " << senhaconta << "\n";
+  }
+
+  Arqpermanente.close();
+  Arqtemporario.close();
+
+  if(encontrado){
+    remove("Banco.txt");
+    rename("TEMPBanco.txt","Banco.txt");
+    limpartela();
+  }
+  else {
+    remove("TEMPBanco.txt");
+    std::cout << "Arquivo nao encontrado";
+  }
+ 
   return 0;
 }
-/*Única função é desativar a conta adicionando uma letra
-D no cpf, tornando a conta desativada*/
-/*int Banco::desativarConta(string cpfD){
-  string desativar = cpf;
-  system(("ren "+cpf+".txt" " D"+cpf+".txt").c_str());
-  return 0;
-Única função é sativar a conta retirando uma letra
-D nome do arquivo, tornando este novamente ativo.*/
-/*int Banco::ativarConta(string cpfA){
-  string ativar = cpf;
-  system(("ren D"+cpf+".txt "+cpf+".txt").c_str());
-  return 0;
-}*/

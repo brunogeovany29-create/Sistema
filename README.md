@@ -4,11 +4,9 @@ Projeto desenvolvido em **C++** como parte da disciplina **INF101 – Programaç
 
 ## Sobre o Projeto
 
-Este repositório contém uma implementação de um sistema bancário simples em C++, desenvolvida com fins acadêmicos. O objetivo é simular operações básicas de um banco — cadastro, consulta, movimentação e gerenciamento de contas — aplicando conceitos fundamentais da linguagem, como estruturas condicionais, laços de repetição, funções, tratamento de exceções, enumerações e organização modular de código em múltiplos arquivos `.cpp`/`.hpp`.
+Este repositório contém uma implementação de um sistema bancário em C++, desenvolvida com fins acadêmicos. O sistema simula operações básicas de um banco — cadastro, consulta, movimentação e gerenciamento de contas — com autenticação por CPF e senha, persistência de dados em arquivo e menus interativos separados por perfil (Cliente e Gerente).
 
-O sistema é executado via terminal, com navegação por menus, e persiste os dados de cada conta em arquivos de texto individuais, identificados pelo CPF do cliente.
-
-Este é o **primeiro projeto completo** que desenvolvi de forma independente, e sua importância vai além do código em si: ele documenta minha curva de aprendizado real, do primeiro protótipo (que sequer compilava) até uma versão funcional com tratamento de exceções e enumerações. Optei por manter esse histórico de evolução como parte do valor do projeto — não é um código "perfeito desde o início", é um código que foi corrigido, revisado e melhorado de forma incremental, com cada decisão sendo compreendida antes de ser aplicada.
+Este projeto é acompanhado desde sua primeira versão, que sequer compilava, até esta v1.3. O histórico de evolução é parte intencional do repositório: documenta decisões corrigidas, conceitos aplicados de forma incremental (POO, `<algorithm>`, tratamento de exceções) e erros identificados e resolvidos ao longo do tempo — não é um código "pronto desde o início".
 
 ## Funcionalidades
 
@@ -28,20 +26,27 @@ O sistema conta com dois perfis de acesso: **Cliente** e **Gerente**, cada um co
 - Ativar / desativar conta
 - Alterar tipo de conta (Corrente ↔ Poupança)
 
-Todo o fluxo de menus utiliza `enum` para as opções (evitando "números mágicos" no código) e captura entradas não numéricas com `try/catch`, evitando que o programa encerre de forma abrupta diante de uma digitação inválida.
+Todo o fluxo de menus usa `enum` para as opções e captura entradas não numéricas com `try/catch`, evitando encerramentos abruptos por digitação inválida.
+
+## Autenticação
+
+A partir desta versão, o login exige **CPF e senha**, ambos definidos no momento do cadastro e armazenados como campos separados (a senha não é mais derivada do CPF). O acesso é limitado a **3 tentativas de senha** por sessão de login.
+
+> A senha atualmente é armazenada como número inteiro, em texto puro no arquivo — ver seção "Limitações Conhecidas" para o plano de evolução desse ponto.
 
 ## Estrutura de Dados da Conta
 
-Cada conta é armazenada em um arquivo de texto próprio (`<CPF>.txt`), contendo os seguintes campos, em ordem:
+Todas as contas são armazenadas em um único arquivo (`Banco.txt`), uma linha por conta, com os seguintes campos, em ordem:
 
-| Campo           | Tipo   | Descrição                               |
-| --------------- | ------ | ---------------------------------------- |
-| Nome do Cliente | string | Nome completo do titular                 |
-| CPF             | string | Identificador único da conta             |
-| Número da Conta | int    | Número identificador da conta            |
-| Tipo da Conta   | int    | 1 = Conta Corrente / 2 = Conta Poupança |
-| Status da Conta | int    | 1 = Ativa / 2 = Desativada                |
-| Saldo           | double | Saldo atual em reais                     |
+| Campo           | Tipo   | Descrição                                |
+| --------------- | ------ | ------------------------------------------ |
+| CPF             | string | Identificador único da conta               |
+| Nome do Cliente | string | Nome completo do titular                   |
+| Número da Conta | int    | Número identificador da conta              |
+| Tipo da Conta   | int    | 1 = Conta Corrente / 2 = Conta Poupança   |
+| Status da Conta | int    | 1 = Ativa / 2 = Desativada                 |
+| Saldo           | double | Saldo atual em reais                       |
+| Senha           | int    | Senha de acesso (somente números, ver nota acima) |
 
 ## Estrutura do Projeto
 
@@ -49,14 +54,14 @@ Cada conta é armazenada em um arquivo de texto próprio (`<CPF>.txt`), contendo
 ├── Main.cpp        # Ponto de entrada do programa
 ├── Menu.hpp         # Cabeçalho das funções de menu e navegação
 ├── Menu.cpp         # Telas, menus, enums e fluxo de interação (Cliente/Gerente)
-├── Conta.hpp         # Cabeçalho da classe Banco e da função de login
-├── Conta.cpp         # Lógica de cadastro, login e operações de conta
+├── Conta.hpp         # Cabeçalho da classe Banco, login e senha
+├── Conta.cpp         # Lógica de cadastro, autenticação e operações de conta
 └── README.md
 ```
 
 O projeto é dividido em dois módulos principais:
 
-- **Conta** — responsável pela lógica de negócio: cadastro, login, saldo, saque, depósito, alteração de tipo, ativação/desativação e persistência em arquivo.
+- **Conta** — classe `Banco` com atributos privados e getters/setters, responsável pela lógica de negócio: cadastro, autenticação, saldo, saque, depósito, alteração de tipo, ativação/desativação e persistência em arquivo.
 - **Menu** — responsável pela camada de interação com o usuário: exibição de telas, menus, tratamento de exceções de entrada e roteamento entre os perfis Cliente e Gerente.
 
 ## Menu do Sistema
@@ -89,9 +94,9 @@ O projeto é dividido em dois módulos principais:
 
 ## Como Compilar e Executar
 
-O projeto foi desenvolvido e testado utilizando o **Visual Studio Code**, com o compilador **GCC/MinGW**, no terminal integrado.
+Desenvolvido e testado com **Visual Studio Code** e o compilador **GCC/MinGW**.
 
-Compilar o projeto:
+Compilar:
 
 ```bash
 g++ Main.cpp Menu.cpp Conta.cpp -o SistemaBancario.exe
@@ -103,37 +108,33 @@ Executar (Windows):
 ./SistemaBancario.exe
 ```
 
-> **Observação:** o projeto utiliza o comando `system("cls")` para limpeza de tela, um recurso específico do Windows. A execução em outros sistemas operacionais exigirá adaptação desse trecho — este é um ponto de melhoria já identificado e mapeado para versões futuras.
+> **Observação:** o projeto utiliza `system("cls")` para limpeza de tela, um recurso específico do Windows — ponto de melhoria já mapeado para versões futuras.
 
 ## Tecnologias Utilizadas
 
-- C++
+- C++ (com `<algorithm>`, `<vector>`, `<fstream>`)
 - Visual Studio Code
 - GCC / MinGW
 - Git e GitHub
 
-## Objetivos de Aprendizagem
+## Conceitos Aplicados
 
-Este projeto foi desenvolvido para praticar:
+- Programação Orientada a Objetos: classe `Banco` com atributos privados, getters/setters e métodos que operam sobre o próprio estado do objeto
+- `std::find_if` com lambdas para busca de registros em memória
+- `enum` para as opções de menu, no lugar de números soltos no código
+- Tratamento de exceções (`try/catch`) para entradas não numéricas
+- Persistência de dados em arquivo, com leitura, atualização e regravação
+- Autenticação por CPF e senha, com limite de tentativas
 
-- Lógica de programação e organização de código em múltiplos arquivos
-- Estruturas de decisão e repetição
-- Manipulação de arquivos para persistência de dados
-- Construtores e inicialização de estado em classes
-- Enumerações (`enum`) para substituir valores numéricos soltos
-- Tratamento de exceções (`try/catch`) para entradas inválidas
-- Boas práticas de nomenclatura, qualificação de namespace e separação de responsabilidades
-- Documentação de projetos para publicação no GitHub
+## Limitações Conhecidas (versão 1.3)
 
-## Limitações Conhecidas (versão 1.0)
+Transparência sobre o estado atual do projeto:
 
-Sendo transparente sobre o estado atual do projeto:
-
-- [ ] O login não permite nova tentativa em caso de CPF inexistente ou conta desativada — atualmente o programa é encerrado (`exit()`) nesses casos. Esta é a próxima melhoria planejada.
-- [ ] A lógica de conta ainda está organizada em uma classe `Banco` que concentra várias responsabilidades; uma futura refatoração para uma classe `Conta` dedicada está prevista.
-- [ ] `system("cls")` é específico do Windows, limitando a portabilidade.
-- [ ] Não há autenticação por senha (login é validado apenas pela existência do CPF/arquivo).
-- [ ] `stoi`/`stod` dentro de `Conta.cpp` ainda não estão protegidos por `try/catch` (apenas as entradas de menu em `Menu.cpp` estão).
+- [ ] A senha é armazenada como número inteiro, em texto puro (sem hash). A próxima etapa planejada é aplicar uma função de hash (`std::hash` ou uma biblioteca como `bcrypt`) antes de gravar e comparar a senha.
+- [ ] Uma conta desativada pelo Gerente ainda consegue autenticar normalmente — a checagem de status durante o login precisa ser reintroduzida.
+- [ ] `Sacar()` e `Depositar()` ainda não seguem o mesmo padrão de POO das demais operações da classe (ainda usam variáveis soltas em vez do objeto `Banco`) — conversão já planejada.
+- [ ] `system("cls")` limita a portabilidade do projeto a sistemas Windows.
+- [ ] Há duplicação de código entre as funções que leem `Banco.txt` — uma futura refatoração pode consolidar essa leitura em uma única função reaproveitada por todas.
 
 Nenhum desses pontos compromete o funcionamento das operações principais do sistema — são melhorias de robustez e arquitetura mapeadas conscientemente para as próximas versões.
 
@@ -144,7 +145,7 @@ Estudante de Análise e Desenvolvimento de Sistemas — UNIVIÇOSA (2º período
 
 ## Status do Projeto
 
-✅ **v1.0 — Primeiro projeto completo e funcional.** Operações principais de Cliente e Gerente implementadas, testadas e com tratamento de exceções para entrada inválida. Próximas etapas já mapeadas (ver seção "Limitações Conhecidas").
+✅ **v1.3 — Autenticação por senha implementada, CPF tratado como string em todo o fluxo, POO consolidado na maior parte das operações.** Próximas etapas mapeadas na seção "Limitações Conhecidas".
 
 ## Licença
 
